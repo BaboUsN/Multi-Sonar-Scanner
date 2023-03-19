@@ -1,0 +1,22 @@
+{
+    "url": "http://localhost:9000",
+    "os": "win",
+    "projects":[
+        {
+            "project_key": "eng",
+            "token": "sqp_e975bfd38a79d17e25f4a21cc299084a2e1514d1",
+            "location": "./eng",
+            "source": "git-remote",
+            "git_url": "https://github.com/BaboUsN/English-Sentence-And-Mean-Collecter",
+            "branch": "mainn"
+        },
+        {
+            "project_key": "telegram",
+            "token": "sqp_f69a11a1681d5631fada6f3e68f75d45b05af63f00",
+            "location": "./telegram",
+            "source": "git-remote",
+            "git_url": "https://github.com/BaboUsN/Stray-Animal-Information-Service-As-Telegram-Bot",
+            "branch": "main"
+        }
+    ]
+}
