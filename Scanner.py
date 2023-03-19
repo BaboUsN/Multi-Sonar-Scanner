@@ -21,7 +21,7 @@ class SonarScanner:
         scan_command = []
 
         if (self.os == OS.WINDOWS.value):
-            scan_command = f'sonar-scanner.bat -X  -D"sonar.projectKey={project_key}" -D"sonar.sources={location}" -D"sonar.host.url={self.url}" -D"sonar.login={token}"'
+            scan_command = f'sonar-scanner.bat -D"sonar.projectKey={project_key}" -D"sonar.sources={location}" -D"sonar.host.url={self.url}" -D"sonar.login={token}"'
         elif (self.os == OS.LINUX.value or self.os == OS.MAC.value):
             scan_command = f'sonar-scanner -Dsonar.projectKey={project_key} -Dsonar.sources={location} -Dsonar.host.url={self.url} -Dsonar.login={token}'
         else:
