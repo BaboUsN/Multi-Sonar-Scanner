@@ -1,0 +1,4 @@
+projects/*
+logs/*
+.scannerwork/*
+__pycache__/*
