@@ -3,13 +3,15 @@ import subprocess
 from typing import List
 import argparse
 from Logger import Logger
-from enums import ErrorType, Source 
+from enums import ErrorType, Source, OS
 from Project import Project
 from Scanner import SonarScanner
 import os
 import sys
 import time
-def installationChecker():
+
+
+def installationChecker(config):
     #  check is git installed or not
     try:
         result = subprocess.run(['git', '--version'],
@@ -20,11 +22,15 @@ def installationChecker():
 
     # check is sonar scanner installed or not
     try:
-        result = subprocess.run(['sonar-scanner.bat', '--version'],
-                                capture_output=True, text=True, check=True)
+        if (config["os"] == OS.WINDOWS.value):
+            result = subprocess.run(['sonar-scanner.bat', '--version'],
+                                    capture_output=True, text=True, check=True)
+        else:
+            result = subprocess.run(['sonar-scanner', '--version'],
+                                    capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError:
         Logger.throwError(errorType=ErrorType.SONARSCANNER,
-                          message="Sonnar scanner is not installed.")
+                          message="Sonnar scanner is not installed or not added to global path.")
 
 
 def checkPrevProjectLogs(prevProjectLogs, config):
@@ -53,30 +59,41 @@ def paramProcesser():
     args = parser.parse_args()
     return args
 
+
 def checkConfigFile(config):
     configKeys = config.keys()
-    if("url" not in configKeys):
-        Logger.throwError(errorType=ErrorType.CONFIG, message="url is not defined in config.json")
-    if("os" not in configKeys):
-        Logger.throwError(errorType=ErrorType.CONFIG, message="os is not defined in config.json")
-    if("projects" not in configKeys):
-        Logger.throwError(errorType=ErrorType.CONFIG, message="projects is not defined in config.json")
-    
+    if ("url" not in configKeys):
+        Logger.throwError(errorType=ErrorType.CONFIG,
+                          message="url is not defined in config.json")
+    if ("os" not in configKeys):
+        Logger.throwError(errorType=ErrorType.CONFIG,
+                          message="os is not defined in config.json")
+    if ("projects" not in configKeys):
+        Logger.throwError(errorType=ErrorType.CONFIG,
+                          message="projects is not defined in config.json")
+
     for project in config["projects"]:
         projectKeys = project.keys()
-        if("project_key" not in projectKeys):
-            Logger.throwError(errorType=ErrorType.CONFIG, message="project_key is not defined in config.json")
-        if("token" not in projectKeys):
-            Logger.throwError(errorType=ErrorType.CONFIG, message="token is not defined in config.json")
-        if("location" not in projectKeys):
-            Logger.throwError(errorType=ErrorType.CONFIG, message="location is not defined in config.json")
-        if("source" not in projectKeys):
-            Logger.throwError(errorType=ErrorType.CONFIG, message="source is not defined in config.json")
-        if(project["source"] == Source.GIT.value):
-            if("git_url" not in projectKeys):
-                Logger.throwError(errorType=ErrorType.CONFIG, message="git_url is not defined in config.json")
-            if("branch" not in projectKeys):
-                Logger.throwError(errorType=ErrorType.CONFIG, message="branch is not defined in config.json")
+        if ("project_key" not in projectKeys):
+            Logger.throwError(errorType=ErrorType.CONFIG,
+                              message="project_key is not defined in config.json")
+        if ("token" not in projectKeys):
+            Logger.throwError(errorType=ErrorType.CONFIG,
+                              message="token is not defined in config.json")
+        if ("location" not in projectKeys):
+            Logger.throwError(errorType=ErrorType.CONFIG,
+                              message="location is not defined in config.json")
+        if ("source" not in projectKeys):
+            Logger.throwError(errorType=ErrorType.CONFIG,
+                              message="source is not defined in config.json")
+        if (project["source"] == Source.GIT.value):
+            if ("git_url" not in projectKeys):
+                Logger.throwError(errorType=ErrorType.CONFIG,
+                                  message="git_url is not defined in config.json")
+            if ("branch" not in projectKeys):
+                Logger.throwError(errorType=ErrorType.CONFIG,
+                                  message="branch is not defined in config.json")
+
 
 def checkAndGetConfig(configPath):
     try:
@@ -88,14 +105,14 @@ def checkAndGetConfig(configPath):
             "url": "http://localhost:9000",
             "os": "win",
             "projects": [
-               {
-                    "project_key": "project_key",
-                    "token" : "token",
+                {
+                   "project_key": "project_key",
+                    "token": "token",
                     "location": "location",
                     "source": "git-remote",
                     "git_url": "git_url",
                     "branch": "branch"
-               }   
+                }
             ]
         }
         with open(f"{configPath}", "w", encoding="utf-8") as f:
@@ -105,16 +122,15 @@ def checkAndGetConfig(configPath):
         os._exit(0)
 
 
-
-
 if ("__main__" == __name__):
-    installationChecker()
     args = paramProcesser()
     config = checkAndGetConfig(args.config)
+    installationChecker(config)
     sys.stdout.flush()
     checkConfigFile(config)
     logger = Logger()
     prevProjectLogs = logger.getPrevProjectLogs()
+
     if (len(prevProjectLogs.keys()) != 0):
         checkedLogs = checkPrevProjectLogs(prevProjectLogs, config)
         if (len(checkedLogs["erroredProjects"]) != 0 and args.prev_errored == False):
@@ -149,17 +165,14 @@ if ("__main__" == __name__):
                         source=project["source"], branch=project["branch"], git_url=project["git_url"]))
     sonarScanner = SonarScanner(
         url=config["url"], os=config["os"], projects=projects)
-    if(args.multi):
+    if (args.multi):
         resultReport = sonarScanner.multiRun(args.process_limit)
     else:
         resultReport = sonarScanner.run()
     os.system("cls" if os.name == "nt" else "clear")
     print("Results:")
     for result in resultReport.keys():
-        if(resultReport[result]["status"] == "success"):
+        if (resultReport[result]["status"] == "success"):
             print(f"[SUCCESS] {result}")
         else:
             print(f"[ERROR] {result}")
-
-
-
