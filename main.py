@@ -44,6 +44,12 @@ def paramProcesser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--prev-errored', type=bool, default=False,
                         help='If you want to scan only prev errored projects')
+    parser.add_argument('--multi', type=bool, default=False,
+                        help='If you want to scan projects in multi process')
+    parser.add_argument('--process-limit', type=int, default=2,
+                        help='If you want to scan projects in multi process with wanted process limit')
+    parser.add_argument('--config', type=str, default="config.json",
+                        help='Path to config.json file')
     args = parser.parse_args()
     return args
 
@@ -72,9 +78,9 @@ def checkConfigFile(config):
             if("branch" not in projectKeys):
                 Logger.throwError(errorType=ErrorType.CONFIG, message="branch is not defined in config.json")
 
-def checkAndGetConfig():
+def checkAndGetConfig(configPath):
     try:
-        with open("config.json", "r", encoding="utf-8") as f:
+        with open(f"{configPath}", "r", encoding="utf-8") as f:
             config = json.load(f)
         return config
     except:
@@ -92,7 +98,7 @@ def checkAndGetConfig():
                }   
             ]
         }
-        with open("config.json", "w", encoding="utf-8") as f:
+        with open(f"{configPath}", "w", encoding="utf-8") as f:
             json.dump(template, f, indent=4)
         print("config.json file is created. Please fill it.")
         sys.stdout.flush()
@@ -103,10 +109,11 @@ def checkAndGetConfig():
 
 if ("__main__" == __name__):
     installationChecker()
-    config = checkAndGetConfig()
+    args = paramProcesser()
+    config = checkAndGetConfig(args.config)
+    sys.stdout.flush()
     checkConfigFile(config)
     logger = Logger()
-    args = paramProcesser()
     prevProjectLogs = logger.getPrevProjectLogs()
     if (len(prevProjectLogs.keys()) != 0):
         checkedLogs = checkPrevProjectLogs(prevProjectLogs, config)
@@ -142,7 +149,10 @@ if ("__main__" == __name__):
                         source=project["source"], branch=project["branch"], git_url=project["git_url"]))
     sonarScanner = SonarScanner(
         url=config["url"], os=config["os"], projects=projects)
-    resultReport = sonarScanner.multiRun()
+    if(args.multi):
+        resultReport = sonarScanner.multiRun(args.process_limit)
+    else:
+        resultReport = sonarScanner.run()
     os.system("cls" if os.name == "nt" else "clear")
     print("Results:")
     for result in resultReport.keys():

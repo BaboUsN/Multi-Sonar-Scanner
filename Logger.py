@@ -72,8 +72,12 @@ class Logger(Exception):
         firstFolder = folders[0]
         # get first folder path
         firstFolderPath = os.path.join(self.logDirectory, firstFolder)
-        with open(os.path.join(firstFolderPath, "result.json"), "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(os.path.join(firstFolderPath, "result.json"), "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return {}
+        
 
     @staticmethod
     def create(errorType: str, message: str = "") -> str:

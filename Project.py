@@ -51,7 +51,6 @@ class Project:
                 sys.stdout.flush()
                 result = subprocess.run(f"git clone -b {self.branch} {self.git_url} {self.full_path}",
                                         capture_output=True, text=True, check=True)
-                print(result.stdout.strip() )
                 return result.stdout.strip()
             except subprocess.CalledProcessError:
                 return Logger.create(errorType=ErrorType.CLONE)

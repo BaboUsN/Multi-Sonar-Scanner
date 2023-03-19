@@ -29,6 +29,7 @@ class SonarScanner:
         return scan_command
 
     def run(self) -> None:
+        resultRaport = {}
         for project in self.projects:
             projectPath = project.prepareProject()
             scan_command = self.prepareScannerCommand(
@@ -36,11 +37,33 @@ class SonarScanner:
             try:
                 output = subprocess.run(
                     scan_command, stdout=subprocess.PIPE, text=True)
-            except subprocess.CalledProcessError:
-                return Logger.create(errorType=ErrorType.RUN)
+                if ("EXECUTION SUCCESS" in output.stdout):
+                    resultRaport[project.project_key] = {
+                        "status": "success",
+                        "time": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    }
+                    print(f"[SUCCESS] {project.project_key}")
+                    sys.stdout.flush()
+                    time.sleep(1)
+                else:
+                    resultRaport[project.project_key] = {
+                        "status": "error",
+                        "time": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    }
+                    Logger.saveErrorLogs(
+                        errorLogs=output.stdout, project_key=project.project_key)
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    print(f"[ERROR] {project.project_key}")
+                    sys.stdout.flush()
+                    time.sleep(1)
 
-    def multiRun(self) -> None:
-        process_limit = 1
+            except subprocess.CalledProcessError:
+                Logger.saveErrorLogs(
+                    errorLogs=output.stdout, project_key=project.project_key)
+                return Logger.create(errorType=ErrorType.RUN)
+        return resultRaport
+
+    def multiRun(self, process_limit=2) -> None:
         project_index = 0
         resultRaport = {}
         for index in range(0, math.ceil(len(self.projects)/process_limit)):
